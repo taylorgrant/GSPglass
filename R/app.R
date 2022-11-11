@@ -143,10 +143,10 @@ glassdoorApp <- function(...) {
       # if yes to proceed, scrape the reviews
       shiny::observeEvent(input$proceedYes, {
         # gd_out <- shiny::reactive({
-          # rv$data <- readRDS("~/R/blackstone/teamhealth/data/gd_reviews.rds")
-          cid <- get_cid(input$url)
-          xx <- estimate_max(cid)
-          rv$data <- scrape_glassdoor(cid, xx)
+          rv$data <- readRDS("~/R/blackstone/teamhealth/data/gd_reviews.rds")
+          # cid <- get_cid(input$url)
+          # xx <- estimate_max(cid)
+          # rv$data <- scrape_glassdoor(cid, xx)
 
         # render table once completed
         output$table <- DT::renderDT(server = FALSE, {
@@ -289,6 +289,28 @@ glassdoorApp <- function(...) {
         dt_topic_table(cons, company, "Cons")
       })
 
+      output$full_table <- DT::renderDT(server = FALSE, {
+        dat <- pros$df |>
+          dplyr::select(review_date:model_topic) |>
+          dplyr::rename(pro_topic = model_topic) |>
+          dplyr::left_join(dplyr::select(cons$df, c(doc_id, con_topic = model_topic)))
+
+        DT::datatable(dat,
+                      colnames = c("Review Date", "Job Title", "Employment Status",
+                                   "Employment Duration", "Summary", "Rating",
+                                   "Pros", "Cons", "doc_id", "Pros: Topic", "Cons: Topic"),
+                      extensions = "Buttons",
+                      filter = list(position = "top", clear = FALSE),
+                      rownames = FALSE,
+                      options = list(
+                        # searching = FALSE,
+                        dom = "Blftp",
+                        buttons = c('excel'),
+                        columnDefs = list(list(width = '300px', targets = c(6,7)),
+                                          list(visible = FALSE, targets = c("doc_id")))),
+                      caption = corp_name(input$url))
+      })
+
     output$tab3 <- shiny::renderUI({
       tab3_ui <- shinydashboard::tabItem("tm",
                                          shiny::h4(paste("Reviews for: ", corp_name(input$url))),
@@ -300,19 +322,12 @@ glassdoorApp <- function(...) {
                                                shiny::tabPanel("Positives (Table)", DT::dataTableOutput("dt_tm_pro")),
                                                shiny::tabPanel("Negatives", highcharter::highchartOutput("hc_tm_con", height = "800px")),
                                                shiny::tabPanel("Negatives (Table)", DT::dataTableOutput("dt_tm_con")),
+                                               shiny::tabPanel("All Data", DT::dataTableOutput("full_table"))
                                            )
                                          )
       )
     })
     })
-
-
-
-
-
-
-
-
 
 
     # download handler for rmarkdown
