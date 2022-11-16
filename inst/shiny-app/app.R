@@ -1,7 +1,5 @@
 
-library(shiny)
 
-glassdoorApp <- function(...) {
 
   # header ------------------------------------------------------------------
   header <- shinydashboard::dashboardHeader(title = "Glassdoor Scraper",
@@ -345,8 +343,8 @@ glassdoorApp <- function(...) {
 
 
     # TAB 4 - NOTES -----------------------------------------------------------
-    output$notes <- renderUI({
-      HTML("<b>About Topic Modeling:</b> Topic modeling is an unsupervised dimension reduction method; in this case, we are
+    output$notes <- shiny::renderUI({
+      shiny::HTML("<b>About Topic Modeling:</b> Topic modeling is an unsupervised dimension reduction method; in this case, we are
            leveraging the BTM model, which uses 'word-word co-occurrence patterns' (e.g., biterms) within the
            texts. The BTM model excels at finding topics in shorter texts such as survey responses, tweets, and online reviews.
            For more detail, the reference paper for the model can be found
@@ -412,7 +410,7 @@ glassdoorApp <- function(...) {
 
   }
 
-  shiny::shinyApp(ui, server)
+shiny::shinyApp(ui, server)
 
-}
+
 

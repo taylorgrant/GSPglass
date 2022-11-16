@@ -253,7 +253,8 @@ hc_topic_time <- function(dat) {
     dplyr::mutate(year = lubridate::year(review_date)) |>
     dplyr::count(year, model_topic) |>
     dplyr::group_by(year) |>
-    dplyr::mutate(pct = n/sum(n))
+    dplyr::mutate(pct = n/sum(n)) |>
+    dplyr::filter(!is.na(model_topic))
 
   highcharter::hchart(tmpdat, 'column',
                       highcharter::hcaes(x = year, y = round(pct*100, 1), group = model_topic)) |>
