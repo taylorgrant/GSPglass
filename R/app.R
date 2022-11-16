@@ -1,4 +1,4 @@
-source(system.file("R", "helpers.R", package = "GSPglass"))
+library(shiny)
 
 
 # header ------------------------------------------------------------------
