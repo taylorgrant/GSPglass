@@ -5,16 +5,6 @@ get_cid <- function(url) {
   return(cid)
 }
 
-## function to convert from one tab to another ##
-convertMenuItem <- function(mi,tabName) {
-  mi$children[[1]]$attribs['data-toggle']="tab"
-  mi$children[[1]]$attribs['data-value'] = tabName
-  if(length(mi$attribs$class)>0 && mi$attribs$class=="treeview"){
-    mi$attribs$class=NULL
-  }
-  mi
-}
-
 # get company name
 corp_name <- function(x) {
   x1 <- stringr::str_replace_all(x, "https://www.glassdoor.com/Reviews/", "")
