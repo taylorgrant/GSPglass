@@ -50,7 +50,6 @@ estimate_max <- function(companyID) {
       as.integer()
     return(ceiling(review_count/10))
   }
-  cat("Estimating total number of pages we have to crawl...\n")
   max <- get_maxResults(companyID)
 }
 
@@ -248,3 +247,28 @@ hc_sum_rating <- function(dat) {
     )
 
 }
+
+hc_topic_time <- function(dat) {
+  tmpdat <- dat$df |>
+    dplyr::mutate(year = lubridate::year(review_date)) |>
+    dplyr::count(year, model_topic) |>
+    dplyr::group_by(year) |>
+    dplyr::mutate(pct = n/sum(n))
+
+  highcharter::hchart(tmpdat, 'column',
+                      highcharter::hcaes(x = year, y = round(pct*100, 1), group = model_topic)) |>
+    highcharter::hc_plotOptions(column = list(
+      dataLabels = list(enabled = FALSE),
+      stacking = "normal")
+    ) |>
+    highcharter::hc_xAxis(title = list(text = glue::glue("Year")),
+                          type = "category") |>
+    highcharter::hc_yAxis(title = list(text = glue::glue("Percentage")),
+                          max = 100
+                          ) |>
+    highcharter::hc_title(text = glue::glue("Topic volume by year"),
+                          align = "left")
+
+}
+
+
