@@ -43,7 +43,13 @@ glassdoorApp <- function(...) {
                  selected=F,
                  shinydashboard::menuItem("Topic Model both Pros and Cons?",
                                           shinydashboard::menuItem(shiny::uiOutput("topicmodel", align = "center")))
-        ),"topics")
+        ),"topics"),
+      convertMenuItem(
+        shinydashboard::menuItem("About", tabName = "notes",
+                                 icon = shiny::icon("square-poll-vertical"),
+                                 selected=F,
+                                 shinydashboard::menuItem("About")
+        ),"notes")
     )
   )
 
@@ -67,7 +73,9 @@ glassdoorApp <- function(...) {
       shinydashboard::tabItem("summary", shiny::uiOutput("tab2"),
               shinysky::busyIndicator(text = 'Please wait...', wait = 1500)),
       shinydashboard::tabItem("topics", shiny::uiOutput("tab3"),
-              shinysky::busyIndicator(text = 'Please wait...', wait = 1500))
+              shinysky::busyIndicator(text = 'Please wait...', wait = 1500)),
+      shinydashboard::tabItem("notes", shiny::uiOutput("tab4"),
+                              shinysky::busyIndicator(text = 'Please wait...', wait = 1500))
     )
   )
 
@@ -84,30 +92,17 @@ glassdoorApp <- function(...) {
                                                     left under the <b>Scraper</b> tab. The app will then let you know how many pages
                                                     have to be scraped with an estimate of how long it will take. If you press the <code>Yes</code>
                                                     button, it will scrape the site. If you press <code>No</code>, the app will reset itself.<br><br>
-                                                    <b>What happens after it scrapes?</b> When the scrape is complete, summary info boxes will appear along with a table of all
-                                                    reviews. These reviews are searchable using the filter tabs above each column, or via the search
-                                                    bar in the upper right. If you want, you can download all reviews by pushing the <code>Excel</code>
+                                                    <b>What happens after it scrapes?</b> When the scrape is complete, summary info boxes will appear along
+                                                    with a table of all reviews. These reviews are searchable using the filter tabs above each column, or via
+                                                    the search bar in the upper right. If you want, you can download all reviews by pushing the <code>Excel</code>
                                                     button.<br><br>If you want to explore the data further, select the <b>Summary Data</b> tab. Here you
                                                     will find summary data by year, quarter, and month as well as wordclouds for various parts of the
                                                     reviews (Summary, Pros, Cons). All plots are downloadable via the hamburger menu in the upper right of
-                                                    each plot.<br><br><b>Topic Modeling:</b> In this tab, pressing the <code>Yes</code> button will begin the topic modeling
-                                                    process for both the <b>Pros</b> and <b>Cons</b> Reviews. Topic modeling is an unsupervised dimension reduction method;
-                                                    in this case, we are leveraging the BTM model, which uses 'word-word co-occurrence patterns' (e.g., biterms) within the
-                                                    texts. The BTM model excels at finding topics in shorter texts such as survey responses, tweets, and online reviews.
-                                                    For more detail, the reference paper for the model can be found
-                                                    <a href='https://github.com/xiaohuiyan/xiaohuiyan.github.io/blob/master/paper/BTM-WWW13.pdf' target='_blank'>here</a>.<br><br>
-                                                    To properly model the text, the app has to tag appropriate parts of speech. The app
-                                                    <b>will download a pre-trained annotator model to your local directory</b> (you will be given the option to delete it via a
-                                                    button push after the model runs), which it will then use to tokenize, tag, and parse
-                                                    each word. It will also capture the co-occurrence frequency of all nouns, verbs, and adjectives that are within 3 skips
-                                                    of each term within each review text. This data will then be passed into the BTM model. The BTM algorithm will then
-                                                    estimate a model for varying number of topics - 5 to 15 topics - and will select the best one based on each model's coherence
-                                                    score.<br><br>When the best model is found, the topics are then plotted into a 2-dimensional space via the methodology outlined
-                                                    <a href='https://aclanthology.org/W14-3110.pdf' target='_blank'>here</a>. The distance between topics in
-                                                    this visualization is meaningful - the closer the topics, the more similar they are. The bubble size indicates the size of the
-                                                    topic relative to others, mousing over each bubble will provide the top 4-5 nouns as a descriptor of the topic,
-                                                    the proportion of the topic, and the top 12 most relevant and salient terms for that topic. Because Pros and Cons are separate
-                                                    texts, each is modeled and visualized separately."),
+                                                    each plot.<br><br><b>Topic Modeling:</b> If you want to take the analysis further, you can choose to
+                                                    topic model the reviews data. Because reviews come in two flavors - Pros and Cons - each are modeled using
+                                                    a model designed for shorter texts (for more info see the <b>About</b> tab).<br><br>The topic modeling process
+                                                    involves running the model tens of thousands times, so this process will take a few minutes. <em>Be patient</em>.
+                                                    You can see how the modeling process is going by referring back to the output in the R console."),
                                    easyClose = T))
 
 
@@ -142,11 +137,10 @@ glassdoorApp <- function(...) {
 
       # if yes to proceed, scrape the reviews
       shiny::observeEvent(input$proceedYes, {
-        # gd_out <- shiny::reactive({
-          rv$data <- readRDS("~/R/blackstone/teamhealth/data/gd_reviews.rds")
-          # cid <- get_cid(input$url)
-          # xx <- estimate_max(cid)
-          # rv$data <- scrape_glassdoor(cid, xx)
+
+          cid <- get_cid(input$url)
+          xx <- estimate_max(cid)
+          rv$data <- scrape_glassdoor(cid, xx)
 
         # render table once completed
         output$table <- DT::renderDT(server = FALSE, {
@@ -172,11 +166,17 @@ glassdoorApp <- function(...) {
                              shiny::fluidRow(
                                shinydashboard::infoBox("Total Reviews", nrow(rv$data),
                                                        width = 3),
-                               shinydashboard::infoBox("Avg. Rating (95% C.I.)", glue::glue("{round(mean(rv$data$rating), 1)} ({round(confint(lm(rating ~ 1, rv$data), level = 0.95),2)[1]} - {round(confint(lm(rating ~ 1, rv$data), level = 0.95),2)[2]})"),
+                               shinydashboard::infoBox("Avg. Rating (95% C.I.)", glue::glue("{round(mean(rv$data$rating), 1)}",
+                                                                                            " ({round(confint(lm(rating ~ 1, rv$data), level = 0.95),2)[1]}",
+                                                                                            " - {round(confint(lm(rating ~ 1, rv$data), level = 0.95),2)[2]})"),
                                                        width = 3),
-                               shinydashboard::infoBox("Avg. Rating - Current Employees", round(mean(rv$data[rv$data$status == "Current Employee",]$rating), 1),
+                               shinydashboard::infoBox("Avg. Rating - Current Employees", glue::glue("{round(mean(rv$data[rv$data$status == 'Current Employee',]$rating), 1)}",
+                                                                                                     " ({round(confint(lm(rating ~ 1, subset(rv$data, status == 'Current Employee')), level = 0.95),2)[1]}",
+                                                                                                     " - {round(confint(lm(rating ~ 1, subset(rv$data, status == 'Current Employee')), level = 0.95),2)[2]})"),
                                                        width = 3),
-                               shinydashboard::infoBox("Avg. Rating - Former Employees", round(mean(rv$data[rv$data$status == "Former Employee",]$rating), 1),
+                               shinydashboard::infoBox("Avg. Rating - Former Employees", glue::glue("{round(mean(rv$data[rv$data$status == 'Former Employee',]$rating), 1)}",
+                                                                                                    " ({round(confint(lm(rating ~ 1, subset(rv$data, status == 'Former Employee')), level = 0.95),2)[1]}",
+                                                                                                    " - {round(confint(lm(rating ~ 1, subset(rv$data, status == 'Former Employee')), level = 0.95),2)[2]})"),
                                                        width = 3)
                              ),
                              shiny::fluidRow(
@@ -278,6 +278,14 @@ glassdoorApp <- function(...) {
         plot_hc_topics(cons, company, "Con")
       })
 
+      output$hc_pro_time <- highcharter::renderHighchart({
+        hc_topic_time(pros)
+      })
+
+      output$hc_con_time <- highcharter::renderHighchart({
+        hc_topic_time(cons)
+      })
+
       # datatables
       output$dt_tm_pro <- DT::renderDT({
         company <- corp_name(input$url)
@@ -323,12 +331,55 @@ glassdoorApp <- function(...) {
                                                shiny::tabPanel("Negatives", highcharter::highchartOutput("hc_tm_con", height = "800px")),
                                                shiny::tabPanel("Negatives (Table)", DT::dataTableOutput("dt_tm_con")),
                                                shiny::tabPanel("All Data", DT::dataTableOutput("full_table"))
+                                           ),
+                                           shinydashboard::tabBox(
+                                             width = 12,
+                                             shiny::tabPanel("Pro Topics over Time", highcharter::highchartOutput("hc_pro_time", height = "500px")),
+                                             shiny::tabPanel("Con Topics over Time", highcharter::highchartOutput("hc_con_time", height = "500px"))
                                            )
                                          )
       )
     })
     })
 
+
+
+    # TAB 4 - NOTES -----------------------------------------------------------
+    output$notes <- renderUI({
+      HTML("<b>About Topic Modeling:</b> Topic modeling is an unsupervised dimension reduction method; in this case, we are
+           leveraging the BTM model, which uses 'word-word co-occurrence patterns' (e.g., biterms) within the
+           texts. The BTM model excels at finding topics in shorter texts such as survey responses, tweets, and online reviews.
+           For more detail, the reference paper for the model can be found
+           <a href='https://github.com/xiaohuiyan/xiaohuiyan.github.io/blob/master/paper/BTM-WWW13.pdf' target='_blank'>here</a>.<br><br>
+           To properly model the text, the app has to tag appropriate parts of speech. To do this the app
+           <b>will download a pre-trained annotator model to your local directory</b> (you will be given the option to delete it via a
+           button push after the model runs), which it will then use to tokenize, tag, and parse
+           each word. It will also capture the co-occurrence frequency of all nouns, verbs, and adjectives that are within 3 skips
+           of each term within each review text. This data will then be passed into the BTM model. The BTM algorithm will then
+           estimate a model for varying number of topics - 5 to 15 topics - and will select the best one based on each model's coherence
+           score.<br><br>When the best model is identified, the topics are then plotted into a 2-dimensional space via the methodology outlined
+           <a href='https://aclanthology.org/W14-3110.pdf' target='_blank'>here</a>. The distance between topics in
+           this visualization is meaningful - the closer the topics, the more similar they are. The bubble size indicates the size of the
+           topic relative to others, mousing over each bubble will provide the top 4-5 nouns, which serve as a crude descriptor of the topic.
+           Additional data provides includes the proportion of the topic and the top 12 most relevant and salient terms for that topic.
+           Because Pros and Cons are separate texts, each is modeled and visualized separately.
+           <br><br>Because the modeling process is unsupervised, there is no north star as
+           to the correct number of topics. Some may potentially overlap, or seem redundant. Take the time to read through the reviews for
+           specific topics to see how consistent the overlap may be. This is meant as a quick way to summarize reviews, so use it as an aid, but
+           interpretation of the output, as well as whether its accurate or not, is up to the user.")
+    })
+    output$tab4 <- shiny::renderUI({
+      tab4_ui <- shinydashboard::tabItem("notes",
+                                         shiny::h4(paste("Reviews for: ", corp_name(input$url))),
+                                         value="test4",
+                                         shiny::fluidRow(
+                                           shinydashboard::box(
+                                             width = 12,
+                                             shiny::uiOutput("notes")
+                                           )
+                                         )
+      )
+    })
 
     # download handler for rmarkdown
     output$report <-shiny::downloadHandler(
