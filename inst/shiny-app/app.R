@@ -308,7 +308,8 @@ server = function(input, output, session) {
       dat <- pros$df |>
         dplyr::select(review_date:model_topic) |>
         dplyr::rename(pro_topic = model_topic) |>
-        dplyr::left_join(dplyr::select(cons$df, c(doc_id, con_topic = model_topic)))
+        dplyr::left_join(dplyr::select(cons$df, c(doc_id, con_topic = model_topic)),
+                         by = c("doc_id" = "doc_id"))
 
       DT::datatable(dat,
                     colnames = c("Review Date", "Job Title", "Employment Status",
