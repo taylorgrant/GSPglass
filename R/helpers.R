@@ -1,11 +1,32 @@
-# extract company id from gd url
+#' Get CID
+#'
+#' @param url Glassdoor url
+#'
+#' @return alphanumeric ID
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' get_cid(url)
+#' }
 get_cid <- function(url) {
   last <- sub(".*[-]", "", url)
   cid <- gsub("\\..*", "", last)
   return(cid)
 }
 
-# get company name
+
+#' Get Company Name
+#'
+#' @param x Glassdoor url
+#'
+#' @return Company name
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' corp_name(glassdoor_url)
+#' }
 corp_name <- function(x) {
   x1 <- stringr::str_replace_all(x, "https://www.glassdoor.com/Reviews/", "")
   stringr::str_replace_all(gsub("\\-R.*", "", x1), "-", " ")
@@ -44,6 +65,19 @@ estimate_max <- function(companyID) {
 }
 
 
+#' Highcharter Plot
+#'
+#' @param dat Dataset
+#' @param company Company name
+#' @param direction Pros or Cons
+#'
+#' @return Highcharter plot
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_hc_topics(data, company_name, "pros")
+#' }
 plot_hc_topics <- function(dat, company, direction) {
   # set up tooltip
   # ct <- nrow(dat$fulldata)
@@ -114,6 +148,19 @@ return(hc)
 }
 
 
+#' Datatable of Topic Terms
+#'
+#' @param dat Dataset
+#' @param company Company name
+#' @param direction Pro or Con
+#'
+#' @return DT Datatable with Topics and top 12 terms
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' dt_topic_table(data, company, "pros")
+#' }
 dt_topic_table <- function(dat, company, direction) {
 
   nms <- c("Topic", "Topic Size", paste("Term", 1:12))
@@ -136,7 +183,20 @@ dt_topic_table <- function(dat, company, direction) {
 
 }
 
-# summarise the gd data by time
+
+#' Summarise Glassdoor data by timeframe
+#'
+#' @param dat Glassdoor data
+#' @param time Timeframe (Year, Quarter, Month)
+#' @param url Original Glassdoor url
+#'
+#' @return DT datatable and Highcharter Plot
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' data_summary(data, 'year' url)
+#' }
 data_summary <- function(dat, time, url) {
   company <- corp_name(url)
   grp <- dplyr::sym(time)
@@ -189,6 +249,18 @@ data_summary <- function(dat, time, url) {
                       summary_hc = summary_hc)
 }
 
+#' Highcharter Wordcloud
+#'
+#' @param dat Glassdoor data
+#' @param type Summary, Pro or Con
+#'
+#' @return Highcharter wordcloud
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' hc_wordcloud(data, 'pros')
+#' }
 hc_wordcloud <- function(dat, type) {
   tmpdat <- dat |>
     dplyr::pull(!!dplyr::enquo(type)) |>
@@ -218,6 +290,17 @@ hc_wordcloud <- function(dat, type) {
 
 }
 
+#' Summary of Ratings
+#'
+#' @param dat Glassdoor data
+#'
+#' @return Highcharter plot
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' hc_sum_rating(data)
+#' }
 hc_sum_rating <- function(dat) {
   tmpdat <- dat |>
     dplyr::count(rating) |>
@@ -238,6 +321,17 @@ hc_sum_rating <- function(dat) {
 
 }
 
+#' Topic Prevalence over Time
+#'
+#' @param dat Glassdoor data
+#'
+#' @return Highcharter plot
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' hc_topic_time(data)
+#' }
 hc_topic_time <- function(dat) {
   tmpdat <- dat$df |>
     dplyr::mutate(year = lubridate::year(review_date)) |>
