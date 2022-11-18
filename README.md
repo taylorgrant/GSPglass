@@ -1,0 +1,36 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# GSPglass
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+GSPglass is an interactive Shiny app that scrapes, summarizes, and topic
+models Glassdoor reviews. Install the package, run the app, and follow
+the directions provided.
+
+## Installation
+
+You can install the development version of GSPglass from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("taylorgrant/GSPglass")
+```
+
+## Example
+
+To call the Shiny app, do as follows:
+
+``` r
+library(GSPglass)
+runApp()
+```
+
+The modal pop-up explains everything. Additional information about the
+topic modeling process can be found in the About section of the app.
+
+A standardized rmarkdown report is included in the app. After topic
+modeling, the user may choose to generate the report.
