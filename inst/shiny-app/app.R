@@ -49,7 +49,9 @@ sidebar <- shinydashboard::dashboardSidebar(
                icon = shiny::icon("square-poll-vertical"),
                selected=F,
                shinydashboard::menuItem("Topic Model both Pros and Cons?",
-                                        shinydashboard::menuItem(shiny::uiOutput("topicmodel", align = "center")))
+                                        shinydashboard::menuItem(shiny::uiOutput("topicmodel"))),
+               shinydashboard::menuItem("Generate an HTML report?",
+                                        shiny::downloadButton("report", "Yes", class = "dlbtn"))
       ),"topics"),
     convertMenuItem(
       shinydashboard::menuItem("About", tabName = "notes",
@@ -70,6 +72,11 @@ body <- shinydashboard::dashboardBody(
       color: white;
       font-size: 100%;
     }
+    .dlbtn {
+      width: 200px;
+      position:relative;
+      left:40px;
+    }
   "))
   ),
   # tags$head(tags$link(rel = "shortcut icon", href = "favicon.ico")),
@@ -82,7 +89,8 @@ body <- shinydashboard::dashboardBody(
     shinydashboard::tabItem("topics", shiny::uiOutput("tab3"),
             shinysky::busyIndicator(text = 'Please wait...', wait = 1500)),
     shinydashboard::tabItem("notes", shiny::uiOutput("tab4"),
-                            shinysky::busyIndicator(text = 'Please wait...', wait = 1500))
+            shinysky::busyIndicator(text = 'Please wait...', wait = 1500))
+
   )
 )
 
@@ -115,6 +123,7 @@ server = function(input, output, session) {
 
   # Shiny Tab 1 -------------------------------------------------------------
   rv <- shiny::reactiveValues(data = data.frame(), name = "data")
+
   # on submission of URL #
   shiny::observeEvent(input$submit, {
     # require url
@@ -258,7 +267,7 @@ server = function(input, output, session) {
   # TAB 3 - TOPIC MODEL -----------------------------------------------------
 
   output$topicmodel <- shiny::renderUI({
-      shiny::actionButton("tmpro", "Yes! model the reviews")
+        shiny::actionButton("tmpro", "Yes! model the reviews", style = "width:200px")
     })
 
   shiny::observeEvent(input$tmpro, {
@@ -266,49 +275,79 @@ server = function(input, output, session) {
       shiny::need(nrow(rv$data) > 0, "Need data")
     )
 
-    pros <- rv$data |>
-      dplyr::rename(text = pros) |>
-      GSPbtm::complete_btm(5, 15, "NAV")
+    data_out <- reactive({
+      pros <- rv$data |>
+        dplyr::rename(text = pros) |>
+        GSPbtm::complete_btm(5, 15, "NAV")
 
-    cons <- rv$data |>
-      dplyr::rename(text = cons) |>
-      GSPbtm::complete_btm(5, 15, 'NAV')
+      cons <- rv$data |>
+        dplyr::rename(text = cons) |>
+        GSPbtm::complete_btm(5, 15, 'NAV')
+
+      out <- list(pros = pros,
+                  cons = cons,
+                  name = corp_name(input$url))
+    })
 
     # highcharter
     output$hc_tm_pro <- highcharter::renderHighchart({
       company <- corp_name(input$url)
-      plot_hc_topics(pros, company, "Pro")
+      plot_hc_topics(data_out()$pros, company, "Pro")
     })
 
     output$hc_tm_con <- highcharter::renderHighchart({
       company <- corp_name(input$url)
-      plot_hc_topics(cons, company, "Con")
+      plot_hc_topics(data_out()$cons, company, "Con")
     })
 
     output$hc_pro_time <- highcharter::renderHighchart({
-      hc_topic_time(pros)
+      hc_topic_time(data_out()$pros)
     })
 
     output$hc_con_time <- highcharter::renderHighchart({
-      hc_topic_time(cons)
+      hc_topic_time(data_out()$cons)
     })
 
     # datatables
     output$dt_tm_pro <- DT::renderDT({
       company <- corp_name(input$url)
-      dt_topic_table(pros, company, "Pros")
+      dt_topic_table(data_out()$pros, company, "Pros")
     })
 
     output$dt_tm_con <- DT::renderDT({
       company <- corp_name(input$url)
-      dt_topic_table(cons, company, "Cons")
+      dt_topic_table(data_out()$cons, company, "Cons")
     })
 
+    # download handler for rmarkdown
+    output$report <-shiny::downloadHandler(
+      # For PDF output, change this to "report.pdf"
+      filename = "report.html",
+      content = function(file) {
+        # Copy the report file to a temporary directory before processing it, in
+        # case we don't have write permissions to the current working dir (which
+        # can happen when deployed).
+        tempReport <- system.file("rmd", "report.Rmd", package="GSPglass")
+        file.copy("report.Rmd", tempReport, overwrite = TRUE)
+
+        # Set up parameters to pass to Rmd document
+        params <- list(data = data_out())
+
+        # Knit the document, passing in the `params` list, and eval it in a
+        # child of the global environment (this isolates the code in the document
+        # from the code in this app).
+        rmarkdown::render(tempReport, output_file = file,
+                          params = params,
+                          envir = new.env(parent = globalenv())
+        )
+      }
+    )
+
     output$full_table <- DT::renderDT(server = FALSE, {
-      dat <- pros$df |>
+      dat <- data_out()$pros$df |>
         dplyr::select(review_date:model_topic) |>
         dplyr::rename(pro_topic = model_topic) |>
-        dplyr::left_join(dplyr::select(cons$df, c(doc_id, con_topic = model_topic)),
+        dplyr::left_join(dplyr::select(data_out()$cons$df, c(doc_id, con_topic = model_topic)),
                          by = c("doc_id" = "doc_id"))
 
       DT::datatable(dat,
@@ -325,6 +364,7 @@ server = function(input, output, session) {
                       columnDefs = list(list(width = '300px', targets = c(6,7)),
                                         list(visible = FALSE, targets = c("doc_id")))),
                     caption = corp_name(input$url))
+
     })
 
   output$tab3 <- shiny::renderUI({
@@ -352,6 +392,7 @@ server = function(input, output, session) {
 
 
 
+
   # TAB 4 - NOTES -----------------------------------------------------------
   output$notes <- shiny::renderUI({
     shiny::HTML("<b>About Topic Modeling:</b> Topic modeling is an unsupervised dimension reduction method; in this case, we are
@@ -376,6 +417,7 @@ server = function(input, output, session) {
          specific topics to see how consistent the overlap may be. This is meant as a quick way to summarize reviews, so use it as an aid, but
          interpretation of the output, as well as whether its accurate or not, is up to the user.")
   })
+
   output$tab4 <- shiny::renderUI({
     tab4_ui <- shinydashboard::tabItem("notes",
                                        shiny::h4(paste("Reviews for: ", corp_name(input$url))),
@@ -389,34 +431,7 @@ server = function(input, output, session) {
     )
   })
 
-  # download handler for rmarkdown
-  output$report <-shiny::downloadHandler(
-    # For PDF output, change this to "report.pdf"
-    filename = "report.html",
-    content = function(file) {
-      # Copy the report file to a temporary directory before processing it, in
-      # case we don't have write permissions to the current working dir (which
-      # can happen when deployed).
-      tempReport <- system.file("rmd", switch(brandcount(),
-                                              "report.Rmd", "report2.Rmd", "report3.Rmd",
-                                              "report4.Rmd", "report5.Rmd"),
-                                package="kantarComp")
-      file.copy(switch(brandcount(), "report.Rmd", "report2.Rmd", "report3.Rmd",
-                       "report4.Rmd", "report5.Rmd"), tempReport, overwrite = TRUE)
 
-      # Set up parameters to pass to Rmd document
-      params <- list(data = data_out())
-
-      # Knit the document, passing in the `params` list, and eval it in a
-      # child of the global environment (this isolates the code in the document
-      # from the code in this app).
-      rmarkdown::render(tempReport, output_file = file,
-                        params = params,
-                        envir = new.env(parent = globalenv())
-      )
-      unlink(c("kantar_jpgs", "tmpdata", "kantar_gifs"), recursive=TRUE)
-    }
-  )
 
 }
 
