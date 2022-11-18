@@ -1,5 +1,5 @@
 ---
-title: "Glassdoor Reviews:"
+title: "Glassdoor Reviews: `r params$data$name`"
 output: 
   html_document:
     theme: flatly
