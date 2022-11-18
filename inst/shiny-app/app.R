@@ -25,7 +25,7 @@ sidebar <- shinydashboard::dashboardSidebar(
     id = "tabs",
     convertMenuItem(
       shinydashboard::menuItem("Scraper", tabName = "scraper",
-               icon = shiny::icon("square-poll-vertical"),
+               icon = shiny::icon("trowel"),
                selected=T,
                shinydashboard::menuItem("Company:",
                                         shiny::textInput("url", label = "Enter a Glassdoor url"),
@@ -46,7 +46,7 @@ sidebar <- shinydashboard::dashboardSidebar(
       ),"summary"),
     convertMenuItem(
       shinydashboard::menuItem("Topic Modeling", tabName = "topics",
-               icon = shiny::icon("square-poll-vertical"),
+               icon = shiny::icon("wand-magic-sparkles"),
                selected=F,
                shinydashboard::menuItem("Topic Model both Pros and Cons?",
                                         shinydashboard::menuItem(shiny::uiOutput("topicmodel"))),
@@ -55,7 +55,7 @@ sidebar <- shinydashboard::dashboardSidebar(
       ),"topics"),
     convertMenuItem(
       shinydashboard::menuItem("About", tabName = "notes",
-                               icon = shiny::icon("square-poll-vertical"),
+                               icon = shiny::icon("circle-question"),
                                selected=F,
                                shinydashboard::menuItem("About")
       ),"notes")
@@ -180,19 +180,22 @@ server = function(input, output, session) {
                                            shiny::h4(paste("Reviews for: ", corp_name(input$url))),
                                            value="test1",
                            shiny::fluidRow(
-                             shinydashboard::infoBox("Total Reviews", nrow(rv$data),
+                             shinydashboard::infoBox("Total Reviews", icon = shiny::icon("globe"), nrow(rv$data),
                                                      width = 3),
-                             shinydashboard::infoBox("Avg. Rating (95% C.I.)", glue::glue("{round(mean(rv$data$rating), 1)}",
-                                                                                          " ({round(confint(lm(rating ~ 1, rv$data), level = 0.95),2)[1]}",
-                                                                                          " - {round(confint(lm(rating ~ 1, rv$data), level = 0.95),2)[2]})"),
+                             shinydashboard::infoBox("Avg. Rating (95% C.I.)", icon = shiny::icon("gauge"),
+                                                     glue::glue("{round(mean(rv$data$rating), 1)}",
+                                                                " ({round(confint(lm(rating ~ 1, rv$data), level = 0.95),2)[1]}",
+                                                                " - {round(confint(lm(rating ~ 1, rv$data), level = 0.95),2)[2]})"),
                                                      width = 3),
-                             shinydashboard::infoBox("Avg. Rating - Current Employees", glue::glue("{round(mean(rv$data[rv$data$status == 'Current Employee',]$rating), 1)}",
-                                                                                                   " ({round(confint(lm(rating ~ 1, subset(rv$data, status == 'Current Employee')), level = 0.95),2)[1]}",
-                                                                                                   " - {round(confint(lm(rating ~ 1, subset(rv$data, status == 'Current Employee')), level = 0.95),2)[2]})"),
+                             shinydashboard::infoBox("Avg. Rating - Current Employees", icon = shiny::icon("user"),
+                                                     glue::glue("{round(mean(rv$data[rv$data$status == 'Current Employee',]$rating), 1)}",
+                                                                " ({round(confint(lm(rating ~ 1, subset(rv$data, status == 'Current Employee')), level = 0.95),2)[1]}",
+                                                                " - {round(confint(lm(rating ~ 1, subset(rv$data, status == 'Current Employee')), level = 0.95),2)[2]})"),
                                                      width = 3),
-                             shinydashboard::infoBox("Avg. Rating - Former Employees", glue::glue("{round(mean(rv$data[rv$data$status == 'Former Employee',]$rating), 1)}",
-                                                                                                  " ({round(confint(lm(rating ~ 1, subset(rv$data, status == 'Former Employee')), level = 0.95),2)[1]}",
-                                                                                                  " - {round(confint(lm(rating ~ 1, subset(rv$data, status == 'Former Employee')), level = 0.95),2)[2]})"),
+                             shinydashboard::infoBox("Avg. Rating - Former Employees", icon = shiny::icon("user-xmark"),
+                                                     glue::glue("{round(mean(rv$data[rv$data$status == 'Former Employee',]$rating), 1)}",
+                                                                " ({round(confint(lm(rating ~ 1, subset(rv$data, status == 'Former Employee')), level = 0.95),2)[1]}",
+                                                                " - {round(confint(lm(rating ~ 1, subset(rv$data, status == 'Former Employee')), level = 0.95),2)[2]})"),
                                                      width = 3)
                            ),
                            shiny::fluidRow(
