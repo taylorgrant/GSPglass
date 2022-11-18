@@ -404,8 +404,7 @@ server = function(input, output, session) {
          For more detail, the reference paper for the model can be found
          <a href='https://github.com/xiaohuiyan/xiaohuiyan.github.io/blob/master/paper/BTM-WWW13.pdf' target='_blank'>here</a>.<br><br>
          To properly model the text, the app has to tag appropriate parts of speech. To do this the app
-         <b>will download a pre-trained annotator model to your local directory</b> (you will be given the option to delete it via a
-         button push after the model runs), which it will then use to tokenize, tag, and parse
+         <b>will download a pre-trained annotator model to a temporary folder</b>, which it will then use to tokenize, tag, and parse
          each word. It will also capture the co-occurrence frequency of all nouns, verbs, and adjectives that are within 3 skips
          of each term within each review text. This data will then be passed into the BTM model. The BTM algorithm will then
          estimate a model for varying number of topics - 5 to 15 topics - and will select the best one based on each model's coherence
