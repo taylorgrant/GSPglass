@@ -33,12 +33,8 @@ knitr::opts_chunk$set(
   message = FALSE)
 
 # load packages
-pacman::p_load(tidyverse, janitor, here, glue, scales, 
-               highcharter, DT, htmltools, broom)
-
-# read in the data and split out 
-# data <- params$data
-
+pacman::p_load(tidyverse, glue, highcharter, DT)
+data <- params$data
 fulldata <- data$pros$df |>
           dplyr::select(review_date:model_topic) |>
           dplyr::rename(pro_topic = model_topic) |>
@@ -47,7 +43,8 @@ fulldata <- data$pros$df |>
 
 year_avg <- fulldata |> 
   dplyr::mutate(year = lubridate::year(review_date)) |> 
-  dplyr::group_by(year) |> summarise(avg = mean(rating, na.rm = TRUE))
+  dplyr::group_by(year) |> 
+  dplyr::summarise(avg = mean(rating, na.rm = TRUE))
 ```
 
 
