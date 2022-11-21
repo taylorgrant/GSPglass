@@ -338,7 +338,10 @@ hc_topic_time <- function(dat) {
     dplyr::count(year, model_topic) |>
     dplyr::group_by(year) |>
     dplyr::mutate(pct = n/sum(n)) |>
-    dplyr::filter(!is.na(model_topic))
+    dplyr::filter(!is.na(model_topic)) |>
+    dplyr::left_join(dplyr::select(dat$fulldata, c(newid, topic_nouns)),
+                     by = c("model_topic" = "newid")) |>
+    dplyr::mutate(topic_nouns = gsub("((?:[^,]+, ){2}[^,]+),", "\\1<br>", topic_nouns))
 
   highcharter::hchart(tmpdat, 'column',
                       highcharter::hcaes(x = year, y = round(pct*100, 1), group = model_topic)) |>
@@ -352,7 +355,15 @@ hc_topic_time <- function(dat) {
                           max = 100
                           ) |>
     highcharter::hc_title(text = glue::glue("Topic volume by year"),
-                          align = "left")
+                          align = "left") |>
+    highcharter::hc_tooltip(
+      useHTML = TRUE,
+      table = FALSE,
+      headerFormat = "<b>{point.x}</b>",
+      pointFormat = "<br><span style=\"color:{series.color}\">\u25CF</span> <b>Topic: {point.model_topic}</b><br>
+      <span style=\"color:{series.color}\">\u25CF</span> <b>Terms:</b> {point.topic_nouns}<br>
+      <span style=\"color:{series.color}\">\u25CF</span> <b>Count:</b> {point.n} ({point.y}%)<br>"
+    )
 
 }
 
