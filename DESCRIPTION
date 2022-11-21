@@ -15,13 +15,20 @@ Imports:
     dplyr,
     DT,
     glue,
+    GSPbtm (>= 0.0.0.9000),
     highcharter,
     lubridate,
     progress,
     purrr,
+    rmarkdown,
     rvest,
     shiny,
+    shinydashboard,
+    shinysky (>= 0.1.3),
     stringr,
     tibble,
     tidyr,
     tidytext
+Remotes:  
+    taylorgrant/GSPbtm,
+    AnalytixWare/ShinySky
