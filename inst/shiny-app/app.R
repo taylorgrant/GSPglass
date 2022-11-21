@@ -1,7 +1,7 @@
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(shiny, rmarkdown, shinydashboard)
 pacman::p_load_gh("taylorgrant/GSPbtm")
-pacman::p_load_gh("AnalytixWare/ShinySky")
+if (!require("shinysky")) pacman::p_load_gh("AnalytixWare/ShinySky")
 
 ## function to convert from one tab to another ##
 convertMenuItem <- function(mi,tabName) {
