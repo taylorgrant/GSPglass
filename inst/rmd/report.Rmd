@@ -33,7 +33,8 @@ knitr::opts_chunk$set(
   message = FALSE)
 
 # load packages
-pacman::p_load(tidyverse, glue, highcharter, DT)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, glue, highcharter, DT, rmarkdown)
 data <- params$data
 fulldata <- data$pros$df |>
           dplyr::select(review_date:model_topic) |>
