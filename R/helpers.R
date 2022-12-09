@@ -49,16 +49,22 @@ corp_name <- function(x) {
 estimate_max <- function(companyID) {
   start_url <- "https://www.glassdoor.com/Reviews/Company-Reviews-"
   settings_url <- ".htm?sort.sortType=RD&sort.ascending=false&filter.iso3Language=eng"
+  # to clean review count data
+  clean_count <- function(x) {
+    x <- gsub(".*\\of ", "", x)
+    x <- stringr::str_replace(x, " Reviews", "")
+    x <- stringr::str_replace(x, ",", "")
+    x <- as.numeric(x)
+  }
   # 1. get the total pages to scrape
   get_maxResults <- function(companyID) {
     # start session
     pg_reviews <- rvest::session(paste0(start_url, companyID, "_P1", settings_url))
     # get reviews and pages
     review_count <- pg_reviews |>
-      rvest::html_elements(".activePage .count") |>
-      rvest::html_text() |>
-      unique() |>
-      as.integer()
+      rvest::html_elements(".paginationFooter") |>
+      rvest::html_text()
+    review_count <- clean_count(review_count)
     return(ceiling(review_count/10))
   }
   max <- get_maxResults(companyID)
