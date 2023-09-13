@@ -14,6 +14,16 @@
 #' }
 scrape_glassdoor <- function(companyID, max) {
   Sys.sleep(3)
+  # add headers
+  headers = c(
+    `sec-ch-ua` = '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
+    `Referer` = "https://www.glassdoor.com/",
+    `DNT` = "1",
+    `Accept-Language` = "en",
+    `sec-ch-ua-mobile` = "?0",
+    `User-Agent` = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+    `sec-ch-ua-platform` = '"macOS"'
+  )
   # scrape and put into dataframe
   pb <- progress::progress_bar$new(total = max)
   get_reviews <- function(pg){
@@ -27,27 +37,31 @@ scrape_glassdoor <- function(companyID, max) {
       pg_reviews <- httr::content(httr::GET(url = paste0(start_url, companyID, "_P", pg, settings_url),
                                             httr::add_headers(.headers = headers)))
       data.frame(date = pg_reviews |>
-                   rvest::html_elements(".middle.common__EiReviewDetailsStyle__newGrey") |>
+                   rvest::html_elements(".review-details__review-details-module__reviewDate") |>
+                   rvest::html_text2(),
+
+                 title = pg_reviews |>
+                   rvest::html_elements(".review-details__review-details-module__employee") |>
                    rvest::html_text2(),
 
                  summary = pg_reviews |>
-                   rvest::html_elements(".reviewLink") |>
+                   rvest::html_elements(".review-details__review-details-module__title") |>
                    rvest::html_text(),
 
                  rating = pg_reviews |>
-                   rvest::html_elements("#ReviewsFeed .mr-xsm") |>
+                   rvest::html_elements(".review-details__review-details-module__overallRating") |>
                    rvest::html_text(),
 
                  employee_type = pg_reviews |>
-                   rvest::html_elements(".eg4psks0") |>
+                   rvest::html_elements(".review-details__review-details-module__employeeDetails:nth-child(1)") |>
                    rvest::html_text(),
 
                  pros = pg_reviews |>
-                   rvest::html_elements(".v2__EIReviewDetailsV2__fullWidth:nth-child(1) span") |>
+                   rvest::html_elements(".review-details__review-details-module__pro span") |>
                    rvest::html_text(),
 
                  cons = pg_reviews |>
-                   rvest::html_elements(".v2__EIReviewDetailsV2__fullWidth:nth-child(2) span") |>
+                   rvest::html_elements(".review-details__review-details-module__con span") |>
                    rvest::html_text()
 
       )}, error = function(e){
@@ -62,10 +76,12 @@ scrape_glassdoor <- function(companyID, max) {
   tidy_reviews <- function(tbl) {
     tbl |>
       dplyr::mutate(review_date = as.Date(trimws(gsub("\\-.*", "", date)), format = "%b %d, %Y"),
-                    title = trimws(gsub(".*\\-", "", date)),
+                    title = trimws(title),
                     rating = as.numeric(stringr::str_replace_all(rating, ".0", "")),
                     status = gsub("\\,.*", "", employee_type),
-                    duration = trimws(gsub(".*\\,", "", employee_type))) |>
+                    duration = trimws(ifelse(stringr::str_detect(employee_type, ","),
+                                             gsub(".*\\,", "", employee_type),
+                                             NA_character_))) |>
       dplyr::select(-c(date, employee_type)) |>
       dplyr::relocate(review_date, .before = dplyr::everything()) |>
       dplyr::relocate(title, .after = "review_date") |>
