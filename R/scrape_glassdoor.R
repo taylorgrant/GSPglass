@@ -23,8 +23,9 @@ scrape_glassdoor <- function(companyID, max) {
 
       start_url <- "https://www.glassdoor.com/Reviews/Company-Reviews-"
       settings_url <- ".htm?sort.sortType=RD&sort.ascending=false&filter.iso3Language=eng"
-      pg_reviews <- rvest::session(paste0(start_url, companyID, "_P", pg, settings_url))
-
+      # pg_reviews <- rvest::session(paste0(start_url, companyID, "_P", pg, settings_url))
+      pg_reviews <- httr::content(httr::GET(url = paste0(start_url, companyID, "_P", pg, settings_url),
+                                            httr::add_headers(.headers = headers)))
       data.frame(date = pg_reviews |>
                    rvest::html_elements(".middle.common__EiReviewDetailsStyle__newGrey") |>
                    rvest::html_text2(),
