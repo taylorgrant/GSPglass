@@ -4,6 +4,7 @@
 #'
 #' @param corp Company name from url - With the url, can also run `corp_name(url)$hyphen_name` to get it
 #' @param companyID String with alpha-numeric company ID
+#' @param min Page to begin scraping; defaults to 1
 #' @param max Maximum number of pages to scrape
 #'
 #' @return Tibble review date, employee title, employee status, duration, summary, rating, pros, and cons
@@ -11,12 +12,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' reviews <- scrape_glassdoor("State-Farm," E2990", max)
+#' reviews <- scrape_glassdoor("State-Farm," E2990", min, max)
 #' }
-scrape_glassdoor <- function(corp, companyID, max) {
+scrape_glassdoor <- function(corp, companyID, min = 1, max) {
   Sys.sleep(3)
   # scrape and put into dataframe
-  pb <- progress::progress_bar$new(total = max)
+  pgs <- (max - min)+1
+  pb <- progress::progress_bar$new(total = pgs)
   get_reviews <- function(pg){
 
     # extract employer reviews
@@ -113,6 +115,6 @@ scrape_glassdoor <- function(corp, companyID, max) {
       })
   }
   cat("Pulling all reviews now...\n")
-  out <- 1:max |>
+  out <- min:max |>
     purrr::map_dfr(get_reviews)
 }
