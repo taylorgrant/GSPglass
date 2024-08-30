@@ -50,6 +50,8 @@ corp <- corp_name(url)
 # how many pages of reviews are there? 
 max_pages <- estimate_max(corp$hyphen_name, companyID)
 
+# if you don't want to start on page 1, specify it with min
+min <- 15
 # is max_pages too long? or do you want it all? 
-gd_reviews <- scrape_glassdoor(corp$hyphen_name, companyID, max_pages)
+gd_reviews <- scrape_glassdoor(corp$hyphen_name, companyID, min, max_pages)
 ```
