@@ -34,3 +34,22 @@ topic modeling process can be found in the About section of the app.
 
 A standardized rmarkdown report is included in the app. After topic
 modeling, the user may choose to generate the report.
+
+## Using without the Shiny app
+
+``` r
+library(GSPglass)
+
+# copy url from glassdoor
+url <- https://www.glassdoor.com/Reviews/State-Farm-Reviews-E2990.htm
+
+# get CID
+companyID <- get_cid(url)
+# get the company name
+corp <- corp_name(url)
+# how many pages of reviews are there? 
+max_pages <- estimate_max(corp$hyphen_name, companyID)
+
+# is max_pages too long? or do you want it all? 
+gd_reviews <- scrape_glassdoor(corp$hyphen_name, companyID, max_pages)
+```
