@@ -103,7 +103,7 @@ server = function(input, output, session) {
 
   shiny::showModal(shiny::modalDialog(shiny::HTML("<b>What is this?</b> This is an app that scrapes and summarizes Glassdoor Reviews.<br><br>
                                                   <b>How do I use it?</b> Search Glassdoor for the company of interest.
-                                                  After you find the company, copy the URL and then paste it into the URL text field at
+                                                  After you find the company, copy the Reviews URL and then paste it into the URL text field at
                                                   left under the <b>Scraper</b> tab. The app will then let you know how many pages
                                                   have to be scraped with an estimate of how long it will take. If you press the <code>Yes</code>
                                                   button, it will scrape the site. If you press <code>No</code>, the app will reset itself.<br><br>
@@ -135,7 +135,7 @@ server = function(input, output, session) {
         )
       # company id
       cid <- get_cid(input$url)
-      xx <- estimate_max(cid)
+      xx <- estimate_max(corp_name(input$url)$hyphen_name, cid)
       shiny::HTML(glue::glue("<p><br>There are <span style='color:white'><b>{xx} pages</b></span> to scrape,
                         which will take <br>at least <span style='color:white'><b>{ceiling((xx*6)/60)}
                         minutes</b></span> to finish.<br>Would you like to proceed?<br></p>"))
@@ -155,7 +155,7 @@ server = function(input, output, session) {
     shiny::observeEvent(input$proceedYes, {
 
         cid <- get_cid(input$url)
-        xx <- estimate_max(cid)
+        xx <- estimate_max(corp_name(input$url)$hyphen_name, cid)
         rv$data <- scrape_glassdoor(cid, xx)
 
       # render table once completed
@@ -172,12 +172,12 @@ server = function(input, output, session) {
                         dom = "Blftp",
                         buttons = c('excel'),
                         columnDefs = list(list(width = '300px', targets = c(6,7)))),
-                      caption = corp_name(input$url))
+                      caption = corp_name(input$url)$name)
       })
 
       output$tab1 <- shiny::renderUI({
         tab1_ui <- shinydashboard::tabItem("scraper",
-                                           shiny::h4(paste("Reviews for: ", corp_name(input$url))),
+                                           shiny::h4(paste("Reviews for: ", corp_name(input$url)$name)),
                                            value="test1",
                            shiny::fluidRow(
                              shinydashboard::infoBox("Total Reviews", icon = shiny::icon("globe"), nrow(rv$data),
@@ -239,7 +239,7 @@ server = function(input, output, session) {
       shiny::need(nrow(rv$data) > 0, "Need data")
     )
     tab2_ui <- shinydashboard::tabItem("summary_dat",
-                                       shiny::h4(paste("Reviews for: ", corp_name(input$url))),
+                                       shiny::h4(paste("Reviews for: ", corp_name(input$url)$name)),
                                        value="test2",
                                        shiny::fluidRow(
                                          shinydashboard::tabBox(
@@ -289,17 +289,17 @@ server = function(input, output, session) {
 
       out <- list(pros = pros,
                   cons = cons,
-                  name = corp_name(input$url))
+                  name = corp_name(input$url)$name)
     })
 
     # highcharter
     output$hc_tm_pro <- highcharter::renderHighchart({
-      company <- corp_name(input$url)
+      company <- corp_name(input$url)$name
       plot_hc_topics(data_out()$pros, company, "Pro")
     })
 
     output$hc_tm_con <- highcharter::renderHighchart({
-      company <- corp_name(input$url)
+      company <- corp_name(input$url)$name
       plot_hc_topics(data_out()$cons, company, "Con")
     })
 
@@ -313,12 +313,12 @@ server = function(input, output, session) {
 
     # datatables
     output$dt_tm_pro <- DT::renderDT({
-      company <- corp_name(input$url)
+      company <- corp_name(input$url)$name
       dt_topic_table(data_out()$pros, company, "Pros")
     })
 
     output$dt_tm_con <- DT::renderDT({
-      company <- corp_name(input$url)
+      company <- corp_name(input$url)$name
       dt_topic_table(data_out()$cons, company, "Cons")
     })
 
@@ -366,13 +366,13 @@ server = function(input, output, session) {
                       buttons = c('excel'),
                       columnDefs = list(list(width = '300px', targets = c(6,7)),
                                         list(visible = FALSE, targets = c("doc_id")))),
-                    caption = corp_name(input$url))
+                    caption = corp_name(input$url)$name)
 
     })
 
   output$tab3 <- shiny::renderUI({
     tab3_ui <- shinydashboard::tabItem("tm",
-                                       shiny::h4(paste("Reviews for: ", corp_name(input$url))),
+                                       shiny::h4(paste("Reviews for: ", corp_name(input$url)$name)),
                                        value="test3",
                                        shiny::fluidRow(
                                            shinydashboard::tabBox(
@@ -422,7 +422,7 @@ server = function(input, output, session) {
 
   output$tab4 <- shiny::renderUI({
     tab4_ui <- shinydashboard::tabItem("notes",
-                                       shiny::h4(paste("Reviews for: ", corp_name(input$url))),
+                                       shiny::h4(paste("Reviews for: ", corp_name(input$url)$name)),
                                        value="test4",
                                        shiny::fluidRow(
                                          shinydashboard::box(
