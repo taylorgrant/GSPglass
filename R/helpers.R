@@ -29,7 +29,9 @@ get_cid <- function(url) {
 #' }
 corp_name <- function(x) {
   x1 <- stringr::str_replace_all(x, "https://www.glassdoor.com/Reviews/", "")
-  stringr::str_replace_all(gsub("\\-R.*", "", x1), "-", " ")
+  name <- stringr::str_replace_all(gsub("\\-R.*", "", x1), "-", " ")
+  hyphen_name <- stringr::str_replace_all(name, " ", "-")
+  list(name = name, hyphen_name = hyphen_name)
 }
 
 
@@ -38,49 +40,42 @@ corp_name <- function(x) {
 #' @description Estimating the total number of pages to crawl
 #'
 #' @param companyID Alpha numeric string from url
+#' @param corp Company name as it appears in the review url
 #'
 #' @return Numeric value of total number of pages
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' reviews <- estimate_max("E14069")
+#' reviews <- estimate_max("State-Farm","E2990")
 #' }
-estimate_max <- function(companyID) {
-  # add headers
-  headers = c(
-    `sec-ch-ua` = '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
-    `Referer` = "https://www.glassdoor.com/",
-    `DNT` = "1",
-    `Accept-Language` = "en",
-    `sec-ch-ua-mobile` = "?0",
-    `User-Agent` = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
-    `sec-ch-ua-platform` = '"macOS"'
-  )
+estimate_max <- function(corp, companyID) {
 
-  start_url <- "https://www.glassdoor.com/Reviews/Company-Reviews-"
-  settings_url <- ".htm?sort.sortType=RD&sort.ascending=false&filter.iso3Language=eng"
-  # to clean review count data
-  clean_count <- function(x) {
-    x <- gsub(".*\\of ", "", x)
-    x <- stringr::str_replace(x, " Reviews", "")
-    x <- stringr::str_replace(x, ",", "")
-    x <- as.numeric(x)
-  }
+  settings_url <- "?sort.sortType=RD&sort.ascending=false&filter.iso3Language=eng"
+  url <- glue::glue("https://www.glassdoor.com/Reviews/{corp}-Reviews-{companyID}_P1.htm{settings_url}")
   # 1. get the total pages to scrape
-  get_maxResults <- function(companyID) {
+  get_maxResults <- function(url) {
+    # add headers
+    headers = c(
+      `sec-ch-ua` = '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
+      `Referer` = "https://www.google.com/",
+      `DNT` = "1",
+      `Accept-Language` = "en",
+      `sec-ch-ua-mobile` = "?0",
+      `User-Agent` = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+      `sec-ch-ua-platform` = '"macOS"'
+    )
     # start session
-    # pg_reviews <- rvest::session(paste0(start_url, companyID, "_P1", settings_url))
-    pg_reviews <- httr::content(httr::GET(url = paste0(start_url, companyID, "_P1", settings_url),
-                                          httr::add_headers(.headers = headers)))
+    pg_reviews <- httr::content(httr::GET(url, httr::add_headers(.headers = headers)))
     # get reviews and pages
     review_count <- pg_reviews |>
-      rvest::html_elements(".paginationFooter") |>
+      rvest::html_elements(".PaginationContainer_paginationCount__8BbqK") |>
       rvest::html_text()
-    review_count <- clean_count(review_count)
+
+    review_count <- as.numeric(stringr::str_remove(gsub(".*of (.+) Reviews.*", "\\1", review_count), ","))
     return(ceiling(review_count/10))
   }
-  max <- get_maxResults(companyID)
+  max <- get_maxResults(start_url)
 }
 
 
