@@ -25,8 +25,9 @@ devtools::install_github("taylorgrant/GSPglass")
 To call the Shiny app, do as follows:
 
 ``` r
-library(GSPglass)
-runApp()
+DO NOT USE - APP NEEDS UPDATING
+# library(GSPglass)
+# runApp()
 ```
 
 The modal pop-up explains everything. Additional information about the
